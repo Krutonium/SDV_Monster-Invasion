@@ -53,7 +53,7 @@ namespace Monster_Invasion
                         //{
                             //if (rand.Next(0, 9) == 4)
                             {
-                                SpawnMonster(new GreenSlime(new Vector2(Height, Width)));
+                                SpawnMonster(new GreenSlime(new Vector2(Height, Width)), e.NewLocation);
                                 //Nothing is Spawned
                             }
                         //}
@@ -73,14 +73,14 @@ namespace Monster_Invasion
             
             if (e.Button == SButton.End)
             {
-                SpawnMonster(new GreenSlime(Game1.player.position));
+                SpawnMonster(new GreenSlime(Game1.player.position), Game1.currentLocation);
                 //Works fine
             }
         }
 
-        public void SpawnMonster(Monster monster)
+        public void SpawnMonster(Monster monster, GameLocation location)
         {
-            Game1.currentLocation.characters.Add(monster);
+            location.characters.Add(monster);
             this.Monitor.Log($"Spawned slime");
         }
     }
