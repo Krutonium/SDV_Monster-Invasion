@@ -1,16 +1,10 @@
 ﻿using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewModdingAPI.Utilities;
 using StardewValley;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection.PortableExecutable;
-using System.Security.Cryptography.X509Certificates;
 using StardewValley.Monsters;
-using StardewValley.Characters;
-using StardewValley.Network;
 
 namespace Monster_Invasion
 {
@@ -25,44 +19,105 @@ namespace Monster_Invasion
     
     public class ModEntry : Mod
     {
-
-        public List<GameLocation> hasMobs = new List<GameLocation>();
-        public List<Monster> existingMobs = new List<Monster>();
+        public List<String> overrideAreas = new();
+        public List<Monster> existingMobs = new();
         
         public override void Entry(IModHelper helper)
         {
+            GetOverrideAreas();
+            
+#if DEBUG
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
+#endif
             helper.Events.Player.Warped += PlayerOnWarped;
+            helper.Events.GameLoop.DayEnding += GameLoopOnDayEnding;
+            
+        }
+
+        private void GameLoopOnDayEnding(object sender, DayEndingEventArgs e)
+        {
+            ClearArea();
+        }
+
+        private void ClearArea()
+        {
+            foreach (var mob in existingMobs)
+            {
+                mob.Health = 0;
+            }
+            existingMobs.Clear();
+        }
+        
+        private void GetOverrideAreas()
+        {
+            overrideAreas.Add("Example override area");
         }
 
         private void PlayerOnWarped(object sender, WarpedEventArgs e)
         {
-            Monitor.Log($"Warped to {e.NewLocation}");
-            if (!hasMobs.Contains(e.NewLocation))
+            if (!Context.IsWorldReady) return;
+
+            if (!e.OldLocation.farmers.Any())
             {
-                hasMobs.Add(e.NewLocation);
+                //Only clear the map if there's no farmers left on the map.
+                ClearArea();
+            }
+            
+            if (e.NewLocation.IsOutdoors || overrideAreas.Contains(e.NewLocation.Name))
+            {
                 var Tiles = e.NewLocation.map.GetLayer("Back");
                 int Width = 0;
                 int Height = 0;
                 Random rand = new Random();
+                int MobCount = 0;
                 while (Width != Tiles.LayerWidth)
                 {
                     while (Height != Tiles.LayerHeight)
                     {
-                        //if (Tiles.Tiles[Width, Height].TileIndexProperties.ContainsKey("Diggable"))
-                        //{
-                            //if (rand.Next(0, 9) == 4)
+                        var position = new Vector2(Height * Game1.tileSize, Width * Game1.tileSize);
+                        if (e.NewLocation.isTileLocationTotallyClearAndPlaceableIgnoreFloors(new Vector2(Height, Width)))
+                        {
+                            if (rand.Next(0,100) == 50)
                             {
-                                SpawnMonster(new GreenSlime(new Vector2(Height, Width)), e.NewLocation);
-                                //Nothing is Spawned
+                                MobCount += 1;
+                                var _color = new Color(rand.Next(0,255), rand.Next(0,255), rand.Next(0,255));
+                                var Mob = new Monster();
+                                var MobType = rand.Next(1, 6);
+                                switch(MobType)
+                                {
+                                    case 1:
+                                        Mob = new RockGolem(position: position);
+                                        break;
+                                    case 2:
+                                        Mob = new Skeleton(position: position);
+                                        break;
+                                    case 3:
+                                        Mob = new Ghost(position: position);
+                                        break;
+                                    case 4:
+                                        Mob = new GreenSlime(position: position, color: _color);
+                                        break;
+                                    case 5:
+                                        Mob = new DustSpirit(position: position, false);
+                                        break;
+                                    default: 
+                                        Mob = new GreenSlime(position: position, color: _color);
+                                        break;
+                                }
+                                Mob.MaxHealth = rand.Next(0, rand.Next(1, 40));
+                                Mob.Health = Mob.MaxHealth;
+                                existingMobs.Add(Mob);
+                                SpawnMonster(Mob, e.NewLocation);
                             }
-                        //}
+                        }
 
                         Height += 1;
                     }
 
+                    Height = 0;
                     Width += 1;
                 }
+                Monitor.Log($"Spawned {MobCount} Mobs at {e.NewLocation.Name}", LogLevel.Debug);
             }
         }
 
@@ -73,15 +128,13 @@ namespace Monster_Invasion
             
             if (e.Button == SButton.End)
             {
-                SpawnMonster(new GreenSlime(Game1.player.position), Game1.currentLocation);
-                //Works fine
+                ClearArea();
             }
         }
 
         public void SpawnMonster(Monster monster, GameLocation location)
         {
             location.characters.Add(monster);
-            this.Monitor.Log($"Spawned slime");
         }
     }
 }
