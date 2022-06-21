@@ -21,10 +21,11 @@ namespace Monster_Invasion
     {
         public List<String> overrideAreas = new();
         public List<Monster> existingMobs = new();
-        
+        private ModConfig config = new ModConfig();
         public override void Entry(IModHelper helper)
         {
             GetOverrideAreas();
+            config = Helper.ReadConfig<ModConfig>();
             
 #if DEBUG
             helper.Events.Input.ButtonPressed += this.OnButtonPressed;
@@ -44,7 +45,7 @@ namespace Monster_Invasion
         private void GameLoopOnTimeChanged(object sender, TimeChangedEventArgs e)
         {
             if (!Context.IsWorldReady) return;
-            if (e.NewTime >= 2400) return;
+            if (e.NewTime >= config.StartTime) return;
             if (GeneratedToday == true) return;
             GeneratedToday = true;
             ClearArea();
@@ -56,6 +57,17 @@ namespace Monster_Invasion
             ClearArea();
         }
 
+        class ModConfig
+        {
+            public int StartTime = 2400;
+            public bool ScaleWithCombatSkill = false;
+            public int SpawnChancePerTile = 100;
+            public string Explaination =
+                "SpawnChancePerTile is not how you think - A bigger number will *decrease* the number of mobs being spawned" +
+                " - At a setting of 1, it will spawn a mob on every single valid tile." +
+                " This is very laggy. Recommend 100 for a balanced experience, 50 for a more intense one, and 25 for a fight for your life.";
+        }
+        
         private void ClearArea()
         {
             foreach (var mob in existingMobs)
@@ -73,7 +85,7 @@ namespace Monster_Invasion
         private void PlayerOnWarped(object sender, WarpedEventArgs e)
         {
             if (!Context.IsWorldReady) return;
-            if (Game1.timeOfDay <= 2400) return;
+            if (Game1.timeOfDay <= config.StartTime) return;
             if (!e.OldLocation.farmers.Any())
             {
                 //Only clear the map if there's no farmers left on the map.
@@ -126,7 +138,13 @@ namespace Monster_Invasion
                                         Mob = new GreenSlime(position: position, color: _color);
                                         break;
                                 }
-                                Mob.MaxHealth = rand.Next(0, rand.Next(1, 40));
+
+                                int Max = 50;
+                                if (config.ScaleWithCombatSkill)
+                                {
+                                    Max = Game1.player.CombatLevel * 100;
+                                }
+                                Mob.MaxHealth = rand.Next(0, rand.Next(1, Max));
                                 Mob.Health = Mob.MaxHealth;
                                 existingMobs.Add(Mob);
                                 SpawnMonster(Mob, map);
@@ -153,7 +171,7 @@ namespace Monster_Invasion
             }
         }
 
-        public void SpawnMonster(Monster monster, GameLocation location)
+        private void SpawnMonster(Monster monster, GameLocation location)
         {
             location.characters.Add(monster);
         }
