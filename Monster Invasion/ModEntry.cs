@@ -45,7 +45,7 @@ namespace Monster_Invasion
         private void GameLoopOnTimeChanged(object sender, TimeChangedEventArgs e)
         {
             if (!Context.IsWorldReady) return;
-            if (e.NewTime >= config.StartTime) return;
+            if (e.NewTime <= config.StartTime) return;
             if (GeneratedToday == true) return;
             GeneratedToday = true;
             ClearArea();
