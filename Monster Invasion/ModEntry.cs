@@ -31,7 +31,24 @@ namespace Monster_Invasion
 #endif
             helper.Events.Player.Warped += PlayerOnWarped;
             helper.Events.GameLoop.DayEnding += GameLoopOnDayEnding;
-            
+            helper.Events.GameLoop.TimeChanged += GameLoopOnTimeChanged;
+            helper.Events.GameLoop.DayStarted += GameLoopOnDayStarted;
+        }
+
+        private void GameLoopOnDayStarted(object sender, DayStartedEventArgs e)
+        {
+            GeneratedToday = false;
+        }
+
+        private bool GeneratedToday = false;
+        private void GameLoopOnTimeChanged(object sender, TimeChangedEventArgs e)
+        {
+            if (!Context.IsWorldReady) return;
+            if (e.NewTime >= 2400) return;
+            if (GeneratedToday == true) return;
+            GeneratedToday = true;
+            ClearArea();
+            mkMobs(Game1.currentLocation);
         }
 
         private void GameLoopOnDayEnding(object sender, DayEndingEventArgs e)
@@ -56,16 +73,21 @@ namespace Monster_Invasion
         private void PlayerOnWarped(object sender, WarpedEventArgs e)
         {
             if (!Context.IsWorldReady) return;
-
+            if (Game1.timeOfDay <= 2400) return;
             if (!e.OldLocation.farmers.Any())
             {
                 //Only clear the map if there's no farmers left on the map.
                 ClearArea();
             }
-            
-            if (e.NewLocation.IsOutdoors || overrideAreas.Contains(e.NewLocation.Name))
+            mkMobs(e.NewLocation);
+        }
+
+
+        private void mkMobs(GameLocation map)
+        { 
+            if (map.IsOutdoors || overrideAreas.Contains(map.Name))
             {
-                var Tiles = e.NewLocation.map.GetLayer("Back");
+                var Tiles = map.map.GetLayer("Back");
                 int Width = 0;
                 int Height = 0;
                 Random rand = new Random();
@@ -75,7 +97,7 @@ namespace Monster_Invasion
                     while (Height != Tiles.LayerHeight)
                     {
                         var position = new Vector2(Height * Game1.tileSize, Width * Game1.tileSize);
-                        if (e.NewLocation.isTileLocationTotallyClearAndPlaceableIgnoreFloors(new Vector2(Height, Width)))
+                        if (map.isTileLocationTotallyClearAndPlaceableIgnoreFloors(new Vector2(Height, Width)))
                         {
                             if (rand.Next(0,100) == 50)
                             {
@@ -107,7 +129,7 @@ namespace Monster_Invasion
                                 Mob.MaxHealth = rand.Next(0, rand.Next(1, 40));
                                 Mob.Health = Mob.MaxHealth;
                                 existingMobs.Add(Mob);
-                                SpawnMonster(Mob, e.NewLocation);
+                                SpawnMonster(Mob, map);
                             }
                         }
 
@@ -117,10 +139,9 @@ namespace Monster_Invasion
                     Height = 0;
                     Width += 1;
                 }
-                Monitor.Log($"Spawned {MobCount} Mobs at {e.NewLocation.Name}", LogLevel.Debug);
+                Monitor.Log($"Spawned {MobCount} Mobs at {map.Name}", LogLevel.Debug);
             }
         }
-
         private void OnButtonPressed(object sender, ButtonPressedEventArgs e)
         {
             if (!Context.IsWorldReady)
