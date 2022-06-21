@@ -1,0 +1,10 @@
+﻿{
+  "Name": "Monster Invasion",
+  "Author": "Krutonium",
+  "Version": "1.0.0",
+  "Description": "Spawns Monsters at Night!",
+  "UniqueID": "krutonium.monsterinvasion",
+  "EntryDll": "Monster Invasion.dll",
+  "MinimumApiVersion": "3.0.0",
+  "UpdateKeys": []
+}
