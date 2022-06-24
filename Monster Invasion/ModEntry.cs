@@ -111,12 +111,12 @@ namespace Monster_Invasion
                         var position = new Vector2(Height * Game1.tileSize, Width * Game1.tileSize);
                         if (map.isTileLocationTotallyClearAndPlaceableIgnoreFloors(new Vector2(Height, Width)))
                         {
-                            if (rand.Next(0,100) == 50)
+                            if (rand.Next(0, config.SpawnChancePerTile) == 0)
                             {
                                 MobCount += 1;
                                 var _color = new Color(rand.Next(0,255), rand.Next(0,255), rand.Next(0,255));
                                 var Mob = new Monster();
-                                var MobType = rand.Next(1, 6);
+                                var MobType = rand.Next(1, 5);
                                 switch(MobType)
                                 {
                                     case 1:
@@ -126,16 +126,10 @@ namespace Monster_Invasion
                                         Mob = new Skeleton(position: position);
                                         break;
                                     case 3:
-                                        Mob = new Ghost(position: position);
+                                        Mob = new GreenSlime(position: position, color: _color);
                                         break;
                                     case 4:
-                                        Mob = new GreenSlime(position: position, color: _color);
-                                        break;
-                                    case 5:
                                         Mob = new DustSpirit(position: position, false);
-                                        break;
-                                    default: 
-                                        Mob = new GreenSlime(position: position, color: _color);
                                         break;
                                 }
 
