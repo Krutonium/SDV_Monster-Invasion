@@ -60,12 +60,13 @@ namespace Monster_Invasion
         class ModConfig
         {
             public int StartTime = 2400;
-            public bool ScaleWithCombatSkill = false;
             public int SpawnChancePerTile = 100;
             public string Explaination =
                 "SpawnChancePerTile is not how you think - A bigger number will *decrease* the number of mobs being spawned" +
                 " - At a setting of 1, it will spawn a mob on every single valid tile." +
                 " This is very laggy. Recommend 100 for a balanced experience, 50 for a more intense one, and 25 for a fight for your life.";
+            public bool ScaleWithCombatSkill = true;
+            public double scaleFactor = 1.5;
         }
         
         private void ClearArea()
@@ -136,7 +137,8 @@ namespace Monster_Invasion
                                 int Max = 50;
                                 if (config.ScaleWithCombatSkill)
                                 {
-                                    Max = Game1.player.CombatLevel * 100;
+                                    Max = (int)Math.Round(Game1.player.CombatLevel * 100 * config.scaleFactor, MidpointRounding.ToEven);
+                                    Monitor.Log(Max.ToString());
                                 }
                                 Mob.MaxHealth = rand.Next(0, rand.Next(1, Max));
                                 Mob.Health = Mob.MaxHealth;
