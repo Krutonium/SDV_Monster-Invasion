@@ -137,8 +137,8 @@ namespace Monster_Invasion
                                 int Max = 50;
                                 if (config.ScaleWithCombatSkill)
                                 {
-                                    Max = (int)Math.Round(Game1.player.CombatLevel * 100 * config.scaleFactor, MidpointRounding.ToEven);
-                                    //Monitor.Log(Max.ToString());
+                                    Max = (int)Math.Round(Game1.player.CombatLevel * config.scaleFactor * 100 + 1, 0);
+                                    //Monitor.Log(Max.ToString(), LogLevel.Info);
                                 }
                                 Mob.MaxHealth = rand.Next(0, rand.Next(1, Max));
                                 Mob.Health = Mob.MaxHealth;
